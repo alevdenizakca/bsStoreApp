@@ -34,19 +34,14 @@ namespace Services
 
         public async Task DeleteABookAsync(int id, bool trackChanges)
         {
-            var book = await _manager.Book.GetABookByIdAsync(id,trackChanges);
-            if (book == null)
-                throw new BookNotFoundException(id);
-
+            var book = await GetABookByIdAndCheckExists(id, trackChanges);
             _manager.Book.DeleteABook(book);
             await _manager.SaveAsync();
         }
 
         public async Task<BookDto> GetABookByIdAsync(int id, bool trackChanges)
         {
-            var book = await _manager.Book.GetABookByIdAsync(id, trackChanges);
-            if(book == null)
-                throw new BookNotFoundException(id);
+            var book = await GetABookByIdAndCheckExists(id, trackChanges);
             return _mapper.Map<BookDto>(book);
         }
 
@@ -58,23 +53,15 @@ namespace Services
 
         public async Task<(BookDtoForUpdate bookDtoForUpdate, Book book)> GetABookForPatchAsync(int id, bool trackChanges)
         {
-            var book = await _manager.Book.GetABookByIdAsync(id, trackChanges);
-
-            if(book is null)
-                throw new BookNotFoundException(id);    
-
+            var book = await GetABookByIdAndCheckExists(id,trackChanges); 
             var bookDtoForUpdate= _mapper.Map<BookDtoForUpdate>(book);
-
             return (bookDtoForUpdate, book);
         }
 
         public async Task UpdateABookAsync(int id, BookDtoForUpdate bookDto, bool trackChanges)
         {
-            var bookToUpdate = await _manager.Book.GetABookByIdAsync(id,trackChanges);
-            if (bookToUpdate == null)
-                throw new BookNotFoundException(id);
-                
-
+            var bookToUpdate = await GetABookByIdAndCheckExists(id,trackChanges);
+            
             if (bookDto == null)
                 throw new ArgumentNullException(nameof(bookDto));
 
@@ -89,6 +76,16 @@ namespace Services
         {
             _mapper.Map(bookDto, book);
             await _manager.SaveAsync();
+        }
+
+        private async Task<Book> GetABookByIdAndCheckExists(int id, bool trackChanges)
+        {
+            var entity = await _manager.Book.GetABookByIdAsync(id, trackChanges);
+
+            if(entity == null)
+                throw new BookNotFoundException(id);
+
+            return entity;
         }
     }
 }
